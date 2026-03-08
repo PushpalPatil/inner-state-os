@@ -1,5 +1,6 @@
 import type { PlasmoCSConfig } from "plasmo"
-import { useState } from "react"
+import { useEffect } from "react"
+import { motion, AnimatePresence } from "framer-motion"
 import { Orb } from "../components/Orb"
 import { Panel } from "../components/Panel"
 import { useAudioCapture } from "../hooks/useAudioCapture"
@@ -15,12 +16,10 @@ export default function OrbContent() {
     emotionLog, addChunk,
     results, setResults,
     interventionData, setInterventionData,
-    sessionId
+    sessionId, reset
   } = useSessionState()
 
-  const [streams, setStreams] = useState(null)
-
-  const { startCapture, stopCapture } = useAudioCapture(sessionId, async (result) => {
+  const { startCapture, stopCapture } = useAudioCapture(async (result) => {
     addChunk(result)
     if (result.shouldIntervene && !interventionData) {
       const data = await getIntervention(emotionLog.slice(-3))
@@ -29,30 +28,82 @@ export default function OrbContent() {
     }
   })
 
-  const handleOrbClick = async () => {
-    if (panelState === "idle") {
-      try {
-        const captured = await startCapture()
-        setStreams(captured)
-        setPanelState("listening")
-      } catch (e) {
-        console.error("Failed to start capture:", e)
+  // Listen for extension icon click
+  useEffect(() => {
+    const listener = (message: any) => {
+      if (message.type === "TOGGLE_ORB") {
+        // Always reset and start fresh
+        reset()
+        const newSessionId = crypto.randomUUID()
+        startCapture(newSessionId)
+          .then(() => setPanelState("listening"))
+          .catch((e) => console.error("Failed to start capture:", e))
       }
-    } else if (panelState === "listening") {
-      stopCapture(streams)
+    }
+    chrome.runtime.onMessage.addListener(listener)
+    return () => chrome.runtime.onMessage.removeListener(listener)
+  }, [])
+
+  // Click orb to stop recording and get summary
+  const handleOrbClick = async () => {
+    if (panelState === "listening") {
+      stopCapture()
+
+      // Not enough audio — show results with no-data state
+      if (emotionLog.length === 0) {
+        setResults(null)
+        setPanelState("results")
+        return
+      }
+
       setPanelState("processing")
-      const summary = await getSessionSummary(emotionLog, sessionId)
-      setResults(summary)
-      setPanelState("results")
-    } else if (panelState === "results") {
-      setPanelState("idle")
+      try {
+        const summary = await getSessionSummary(emotionLog, sessionId)
+        setResults(summary)
+        setPanelState("results")
+      } catch (e) {
+        console.error("Failed to get summary:", e)
+        setPanelState("idle")
+      }
     }
   }
 
+  // Close panel and reset
+  const handleClose = () => {
+    stopCapture()
+    reset()
+    setPanelState("idle")
+  }
+
   return (
-    <div style={{ position: "fixed", top: 24, right: 24, zIndex: 999999 }}>
-      <Panel state={panelState} results={results} interventionData={interventionData} />
-      <Orb emotion={emotion} intensity={intensity} isListening={panelState === "listening"} onClick={handleOrbClick} />
-    </div>
+    <>
+      <AnimatePresence>
+        {panelState === "listening" && (
+          <motion.div
+            initial={{ scale: 0, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0, opacity: 0 }}
+            transition={{ type: "spring", duration: 0.5 }}
+            style={{ position: "fixed", top: 24, right: 24, zIndex: 999999 }}
+          >
+            <Orb
+              emotion={emotion}
+              intensity={intensity}
+              isListening={true}
+              onClick={handleOrbClick}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <Panel
+        state={panelState}
+        results={results}
+        interventionData={interventionData}
+        emotion={emotion}
+        emotionLog={emotionLog}
+        onClose={handleClose}
+      />
+    </>
   )
 }

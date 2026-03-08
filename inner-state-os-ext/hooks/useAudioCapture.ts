@@ -1,54 +1,52 @@
+import { useRef } from "react"
 import { analyzeChunk } from "../lib/api"
 
-export function useAudioCapture(sessionId: string, onResult: (result: any) => void) {
-  let mediaRecorder: MediaRecorder | null = null
-  let audioContext: AudioContext | null = null
+export function useAudioCapture(onResult: (result: any) => void) {
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null)
+  const streamRef = useRef<MediaStream | null>(null)
+  const sessionIdRef = useRef<string>("")
 
-  const startCapture = async () => {
-    // 1. Get user's mic
-    const micStream = await navigator.mediaDevices.getUserMedia({ audio: true })
+  const startCapture = async (sessionId: string) => {
+    // Clean up any previous recording
+    stopCapture()
 
-    // 2. Request tab capture via background service worker
-    const { streamId, error } = await chrome.runtime.sendMessage({ type: "START_TAB_CAPTURE" })
-    if (error) throw new Error(error)
+    sessionIdRef.current = sessionId
 
-    // 3. Reconstruct tab stream from ID
-    const tabStream = await (navigator.mediaDevices as any).getUserMedia({
-      audio: { mandatory: { chromeMediaSource: "tab", chromeMediaSourceId: streamId } }
-    })
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+    streamRef.current = stream
 
-    // 4. Mix both streams with Web Audio API
-    audioContext = new AudioContext()
-    const destination = audioContext.createMediaStreamDestination()
+    const recorder = new MediaRecorder(stream, { mimeType: "audio/webm;codecs=opus" })
+    mediaRecorderRef.current = recorder
 
-    // Tab audio → mix + keep audible (so user can still hear the call)
-    const tabSource = audioContext.createMediaStreamSource(tabStream)
-    tabSource.connect(destination)
-    tabSource.connect(audioContext.destination)
-
-    // Mic → mix only (don't echo back)
-    audioContext.createMediaStreamSource(micStream).connect(destination)
-
-    // 5. Record the mixed stream
-    mediaRecorder = new MediaRecorder(destination.stream, { mimeType: "audio/webm;codecs=opus" })
-
-    mediaRecorder.ondataavailable = async (e) => {
+    recorder.ondataavailable = async (e) => {
       if (e.data.size === 0) return
-      const buffer = await e.data.arrayBuffer()
-      const base64 = btoa(String.fromCharCode(...new Uint8Array(buffer)))
-      const result = await analyzeChunk(base64, sessionId)
-      onResult(result)
+      try {
+        const buffer = await e.data.arrayBuffer()
+        const bytes = new Uint8Array(buffer)
+        let binary = ""
+        for (let i = 0; i < bytes.length; i++) {
+          binary += String.fromCharCode(bytes[i])
+        }
+        const base64 = btoa(binary)
+        const result = await analyzeChunk(base64, sessionIdRef.current)
+        onResult(result)
+      } catch (err) {
+        console.error("Chunk analysis failed:", err)
+      }
     }
 
-    mediaRecorder.start(10000) // chunk every 10 seconds
-    return { micStream, tabStream }
+    recorder.start(10000)
   }
 
-  const stopCapture = (streams: { micStream: MediaStream, tabStream: MediaStream }) => {
-    mediaRecorder?.stop()
-    audioContext?.close()
-    streams?.micStream?.getTracks().forEach(t => t.stop())
-    streams?.tabStream?.getTracks().forEach(t => t.stop())
+  const stopCapture = () => {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
+      mediaRecorderRef.current.stop()
+    }
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(t => t.stop())
+      streamRef.current = null
+    }
+    mediaRecorderRef.current = null
   }
 
   return { startCapture, stopCapture }
