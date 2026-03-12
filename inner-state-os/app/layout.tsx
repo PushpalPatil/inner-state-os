@@ -21,6 +21,28 @@ const shareTechMono = Share_Tech_Mono({
 export const metadata: Metadata = {
   title: "Inner State OS",
   description: "Your work tools track tasks. Inner State OS tracks your mind.",
+  metadataBase: new URL("https://inner-state-os.vercel.app"),
+  openGraph: {
+    title: "Inner State OS",
+    description: "Your work tools track tasks. Inner State OS tracks your mind.",
+    url: "https://inner-state-os.vercel.app",
+    siteName: "Inner State OS",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "Inner State OS",
+      },
+    ],
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Inner State OS",
+    description: "Your work tools track tasks. Inner State OS tracks your mind.",
+    images: ["/og-image.png"],
+  },
 };
 
 export default function RootLayout({
