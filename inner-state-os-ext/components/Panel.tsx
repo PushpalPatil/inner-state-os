@@ -15,8 +15,9 @@ function MiniOrb({ emotion }: { emotion: string }) {
   )
 }
 
-export function Panel({ state, results, interventionData, emotion, emotionLog, onClose }: any) {
-  const showPanel = state === "processing" || state === "results" || state === "intervention"
+export function Panel({ state, results, interventionData, emotion, emotionLog, transcriptParts, errorMessage, onClose }: any) {
+  const hasTranscript = transcriptParts && transcriptParts.length > 0
+  const showPanel = state === "processing" || state === "results" || state === "intervention" || state === "error" || (state === "listening" && hasTranscript)
 
   return (
     <AnimatePresence>
@@ -39,9 +40,9 @@ export function Panel({ state, results, interventionData, emotion, emotionLog, o
             marginBottom: 20, paddingBottom: 12, borderBottom: "1px solid #1a1a2e",
           }}>
             <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <MiniOrb emotion={emotion || "calm"} />
+              <MiniOrb emotion={state === "error" ? "frustrated" : (emotion || "calm")} />
               <span style={{ fontSize: 13, fontWeight: 600, color: "#e8e8f0", letterSpacing: "0.02em" }}>
-                {state === "processing" ? "Reading your standup..." : "Inner State OS"}
+                {state === "processing" ? "Reading your standup..." : state === "listening" ? "Listening..." : state === "error" ? "Something went wrong" : "Inner State OS"}
               </span>
             </div>
             {state !== "processing" && (
@@ -58,6 +59,43 @@ export function Panel({ state, results, interventionData, emotion, emotionLog, o
               </div>
             )}
           </div>
+
+          {/* Error state */}
+          {state === "error" && (
+            <div style={{
+              padding: 16, borderRadius: 10, background: "#1a0a0a",
+              border: "1px solid #ff6b35", marginBottom: 16,
+            }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: "#ff6b35", marginBottom: 8 }}>
+                API Error
+              </div>
+              <div style={{ fontSize: 12, color: "#ccc", lineHeight: 1.6, marginBottom: 12 }}>
+                {errorMessage || "An unknown error occurred."}
+              </div>
+              <div style={{ fontSize: 11, color: "#888", lineHeight: 1.5 }}>
+                Check that your API keys are valid in <span style={{ color: "#aaa", fontFamily: "monospace" }}>.env.local</span> and the Next.js server is running.
+              </div>
+            </div>
+          )}
+
+          {/* Live transcript */}
+          {transcriptParts && transcriptParts.length > 0 && (state === "listening" || state === "processing" || state === "results") && (
+            <div style={{
+              padding: 12, borderRadius: 8, background: "#0a0a18",
+              border: "1px solid #1a1a2e", marginBottom: 16, maxHeight: 160,
+              overflowY: "auto" as const,
+            }}>
+              <div style={{
+                fontSize: 10, color: "#555", textTransform: "uppercase" as const,
+                letterSpacing: "0.08em", marginBottom: 6,
+              }}>
+                Transcript
+              </div>
+              <div style={{ fontSize: 12, color: "#bbb", lineHeight: 1.6 }}>
+                {transcriptParts.join(" ")}
+              </div>
+            </div>
+          )}
 
           {/* Processing state */}
           {state === "processing" && (

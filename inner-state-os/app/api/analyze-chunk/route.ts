@@ -1,7 +1,6 @@
 import { GoogleGenerativeAI } from "@google/generative-ai"
 import { withCors, OPTIONS } from "@/lib/cors"
 import { logChunk, checkThreshold } from "@/lib/sessionStore"
-import { mockEmotionResult } from "@/lib/mockData"
 
 export { OPTIONS }
 
@@ -20,7 +19,8 @@ export async function POST(req: Request) {
           "intensity": <1-5>,
           "pace": "slow|medium|fast",
           "confidence": <0.0-1.0>,
-          "note": "<one sentence, observable fact about their voice>"
+          "note": "<one sentence, observable fact about their voice>",
+          "transcript": "<verbatim transcription of what was said, or empty string if inaudible>"
         }` }
     ])
     const raw = result.response.text()
@@ -28,8 +28,9 @@ export async function POST(req: Request) {
     const chunks = logChunk(sessionId, parsed)
     const shouldIntervene = checkThreshold(chunks)
     return withCors({ ...parsed, shouldIntervene })
-  } catch (e) {
-    console.error(e)
-    return withCors(mockEmotionResult)
+  } catch (e: any) {
+    console.error("[analyze-chunk] Error:", e)
+    const message = e?.message || "Unknown error"
+    return withCors({ error: `Gemini API failed: ${message}` }, 500)
   }
 }

@@ -2,7 +2,6 @@ import Anthropic from "@anthropic-ai/sdk"
 import { withCors, OPTIONS } from "@/lib/cors"
 import { mockTasks } from "@/lib/mockTasks"
 import { rankTasksByState } from "@/lib/matching"
-import { mockSessionSummary } from "@/lib/mockData"
 
 export { OPTIONS }
 
@@ -40,8 +39,9 @@ export async function POST(req: Request) {
     })
     const raw = (msg.content[0] as any).text
     return withCors(JSON.parse(raw.replace(/```json|```/g, "").trim()))
-  } catch (e) {
-    console.error(e)
-    return withCors(mockSessionSummary)
+  } catch (e: any) {
+    console.error("[session-summary] Error:", e)
+    const message = e?.message || "Unknown error"
+    return withCors({ error: `Claude API failed: ${message}` }, 500)
   }
 }

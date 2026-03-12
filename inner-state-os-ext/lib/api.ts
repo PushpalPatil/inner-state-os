@@ -1,19 +1,22 @@
 const BASE = process.env.PLASMO_PUBLIC_API_URL
 
-export const analyzeChunk = (audioBase64: string, sessionId: string) =>
-  fetch(`${BASE}/api/analyze-chunk`, {
+async function request(url: string, body: object) {
+  const res = await fetch(url, {
     method: "POST", headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ audioBase64, sessionId })
-  }).then(r => r.json())
+    body: JSON.stringify(body)
+  })
+  const data = await res.json()
+  if (!res.ok || data.error) {
+    throw new Error(data.error || `API error (${res.status})`)
+  }
+  return data
+}
+
+export const analyzeChunk = (audioBase64: string, sessionId: string) =>
+  request(`${BASE}/api/analyze-chunk`, { audioBase64, sessionId })
 
 export const getSessionSummary = (emotionLog: any[], sessionId: string) =>
-  fetch(`${BASE}/api/session-summary`, {
-    method: "POST", headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ emotionLog, sessionId })
-  }).then(r => r.json())
+  request(`${BASE}/api/session-summary`, { emotionLog, sessionId })
 
 export const getIntervention = (recentChunks: any[]) =>
-  fetch(`${BASE}/api/intervention`, {
-    method: "POST", headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ recentChunks })
-  }).then(r => r.json())
+  request(`${BASE}/api/intervention`, { recentChunks })

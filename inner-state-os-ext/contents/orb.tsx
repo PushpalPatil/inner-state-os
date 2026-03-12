@@ -14,17 +14,23 @@ export default function OrbContent() {
     panelState, setPanelState,
     emotion, intensity,
     emotionLog, addChunk,
+    transcriptParts,
     results, setResults,
     interventionData, setInterventionData,
+    errorMessage, setErrorMessage,
     sessionId, reset
   } = useSessionState()
 
   const { startCapture, stopCapture } = useAudioCapture(async (result) => {
     addChunk(result)
     if (result.shouldIntervene && !interventionData) {
-      const data = await getIntervention(emotionLog.slice(-3))
-      setInterventionData(data)
-      setPanelState("intervention")
+      try {
+        const data = await getIntervention(emotionLog.slice(-3))
+        setInterventionData(data)
+        setPanelState("intervention")
+      } catch (e: any) {
+        console.error("Intervention failed:", e.message)
+      }
     }
   })
 
@@ -61,9 +67,10 @@ export default function OrbContent() {
         const summary = await getSessionSummary(emotionLog, sessionId)
         setResults(summary)
         setPanelState("results")
-      } catch (e) {
+      } catch (e: any) {
         console.error("Failed to get summary:", e)
-        setPanelState("idle")
+        setErrorMessage(e.message || "Failed to generate summary")
+        setPanelState("error")
       }
     }
   }
@@ -102,6 +109,8 @@ export default function OrbContent() {
         interventionData={interventionData}
         emotion={emotion}
         emotionLog={emotionLog}
+        transcriptParts={transcriptParts}
+        errorMessage={errorMessage}
         onClose={handleClose}
       />
     </>

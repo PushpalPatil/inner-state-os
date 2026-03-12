@@ -30,8 +30,7 @@ export default function Home() {
   const [stage, setStage] = useState(0);
 
   const title = useTypewriter("Inner State OS", 80, 500);
-  const tagline1 = useTypewriter("Your work tools track tasks.", 35, 2200);
-  const tagline2 = useTypewriter("This one reads how you're doing.", 35, 3600);
+  const tagline2 = useTypewriter("This one reads how you're doing.", 35, 3000);
 
   useEffect(() => {
     const t1 = setTimeout(() => setStage(1), 500);
@@ -131,8 +130,7 @@ export default function Home() {
           lineHeight: 1.8,
           letterSpacing: "0.04em",
         }}>
-          {tagline1.displayed}
-          {tagline1.done && !tagline2.done && <span className="typing-cursor" />}
+          Your work tools track tasks.
         </p>
         <p style={{
           fontSize: 17,
@@ -142,7 +140,7 @@ export default function Home() {
           letterSpacing: "0.04em",
         }}>
           {tagline2.displayed}
-          {tagline2.done ? null : tagline1.done ? <span className="typing-cursor" /> : null}
+          {!tagline2.done && <span className="typing-cursor" />}
         </p>
       </div>
 
