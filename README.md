@@ -4,10 +4,10 @@ A Chrome extension that listens to your standup, reads your emotional state in r
 
 Built with Gemini, Claude, Plasmo, and Next.js.
 
-## How It Works
+## How It Works {currently a demo}
 
 1. **Listen** — Click the orb during a video call standup. It captures your mic audio and sends chunks to Gemini every 10 seconds.
-2. **Read** — Gemini analyzes each chunk for emotion, intensity, and pace in real-time. The orb changes color to reflect your state.
+2. **Read** — Gemini analyzes each chunk for emotion, intensity, and pace in real-time. The orb changes color to reflect it's listening.
 3. **Align** — When you stop recording, Claude synthesizes your emotional arc and recommends a task order matched to your current cognitive capacity.
 
 ## Project Structure
