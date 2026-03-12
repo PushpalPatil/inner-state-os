@@ -17,3 +17,153 @@ body {
   color: var(--foreground);
   font-family: var(--font-sans), Arial, Helvetica, sans-serif;
 }
+
+/* Glitch effect for title */
+@keyframes glitch {
+  0%, 100% {
+    text-shadow:
+      2px 0 #ff00ff40,
+      -2px 0 #00ffff40;
+    transform: translate(0);
+  }
+  20% {
+    text-shadow:
+      -3px 0 #ff00ff60,
+      3px 0 #00ffff60;
+    transform: translate(-2px, 1px);
+  }
+  40% {
+    text-shadow:
+      3px 0 #ff00ff50,
+      -3px 0 #00ffff50;
+    transform: translate(2px, -1px);
+  }
+  60% {
+    text-shadow:
+      -1px 0 #ff00ff40,
+      1px 0 #00ffff40;
+    transform: translate(1px, 0);
+  }
+  80% {
+    text-shadow:
+      2px 0 #ff00ff30,
+      -2px 0 #00ffff30;
+    transform: translate(-1px, 1px);
+  }
+}
+
+@keyframes glitch-intense {
+  0%, 85%, 100% {
+    clip-path: inset(0 0 0 0);
+    transform: translate(0);
+  }
+  86% {
+    clip-path: inset(20% 0 60% 0);
+    transform: translate(-4px, 0);
+  }
+  88% {
+    clip-path: inset(50% 0 20% 0);
+    transform: translate(4px, 0);
+  }
+  90% {
+    clip-path: inset(10% 0 70% 0);
+    transform: translate(-2px, 0);
+  }
+  92% {
+    clip-path: inset(60% 0 10% 0);
+    transform: translate(3px, 0);
+  }
+  94% {
+    clip-path: inset(0 0 0 0);
+    transform: translate(0);
+  }
+}
+
+@keyframes scanline {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(100vh); }
+}
+
+@keyframes flicker {
+  0%, 97%, 100% { opacity: 1; }
+  98% { opacity: 0.85; }
+  99% { opacity: 0.92; }
+}
+
+@keyframes typing-cursor {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+@keyframes subtle-drift {
+  0%, 100% { transform: translate(-50%, -50%) scale(1); }
+  50% { transform: translate(-50%, -50%) scale(1.05); }
+}
+
+.glitch-title {
+  font-family: var(--font-share-tech-mono), monospace;
+  animation: glitch 4s infinite, flicker 6s infinite;
+  position: relative;
+}
+
+.glitch-title::before,
+.glitch-title::after {
+  content: attr(data-text);
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.glitch-title::before {
+  color: #ff00ff;
+  animation: glitch-intense 5s infinite;
+  opacity: 0.15;
+}
+
+.glitch-title::after {
+  color: #00ffff;
+  animation: glitch-intense 5s infinite reverse;
+  opacity: 0.15;
+}
+
+.scanline-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 4px;
+  background: rgba(117, 71, 255, 0.06);
+  animation: scanline 4s linear infinite;
+  pointer-events: none;
+  z-index: 60;
+}
+
+/* CRT-style scanline texture */
+.crt-lines {
+  position: fixed;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 0, 0, 0.08) 2px,
+    rgba(0, 0, 0, 0.08) 4px
+  );
+  pointer-events: none;
+  z-index: 55;
+}
+
+.sci-fi-text {
+  font-family: var(--font-share-tech-mono), monospace;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.typing-cursor::after {
+  content: '|';
+  animation: typing-cursor 0.8s infinite;
+  color: #7547FF;
+  margin-left: 2px;
+}
