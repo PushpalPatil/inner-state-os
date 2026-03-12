@@ -1,2 +1,12 @@
+node_modules/
+.DS_Store
+.env
+.env.local
+.env.development
+.env.production
+build/
+.plasmo/
+.next/
+out/
 BUILD_STEPS.md
 CLAUDE.md
